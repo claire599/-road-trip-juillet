@@ -100,10 +100,10 @@ h1 .o{color:var(--org)}
 .bd.open{display:flex}
 .mod{width:100%;max-width:440px;background:var(--cream);border:2px solid var(--coast);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:pop .18s ease;position:relative}
 @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
-.mod .pc{padding:14px 14px 0}.mod .body{padding:14px}
-.gal{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:4px;height:210px;background:var(--sky)}
-.gal img{width:100%;height:100%;object-fit:cover;display:block}
-.gal img:first-child{grid-row:1 / span 2}
+.mod .pc{padding:14px 14px 0}.mod .body{padding:16px;position:relative;z-index:1;background:var(--cream);flex:1 1 auto}
+.gal{display:flex;gap:4px;height:210px;background:var(--sky);overflow:hidden;flex:0 0 auto}
+.gal img{flex:1;min-width:0;height:100%;object-fit:cover;display:block}
+.gal img:first-child{flex:1.7}
 .gal .ph{display:flex;align-items:center;justify-content:center;background:#EAD9B4;color:var(--sepia);font-size:11px;font-weight:700}
 .ghd{font-family:'Bebas Neue';letter-spacing:1px;font-size:17px;margin:2px 0 6px;color:var(--org)}
 .glist{list-style:none;margin:0 0 12px;padding:0}
@@ -150,6 +150,11 @@ h1 .o{color:var(--org)}
   .mod .nm{font-size:3rem}
   .mod .sum{font-size:18px;line-height:1.62}
 }
+.pday{margin-bottom:12px}
+.pdh{font-family:'Bebas Neue';font-size:17px;color:var(--org);letter-spacing:.5px;border-bottom:1px dashed var(--coast);padding-bottom:3px;margin-bottom:5px}
+.pev{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#4a5a52;padding:3px 0}
+.pev .pe{font-size:18px}
+.pempty{text-align:center;color:var(--sepia);padding:24px;font-weight:600}
 </style></head><body><div class="sheet">
 
 <div class="airmail"></div>
@@ -188,7 +193,7 @@ h1 .o{color:var(--org)}
  </div>
 </div>
 <!-- CTA sous le carnet -->
-<div class="btns"><button onclick="manualRefresh()">🔄 Actualiser</button><button onclick="openPalmares()">🏆 Palmarès</button><button onclick="alert('Replay des célébrations — à venir')">🎬 Replay</button></div>
+<div class="btns"><button onclick="manualRefresh()">🔄 Actualiser</button><button onclick="openPalmares()">🏆 Palmarès</button><button onclick="replay()">🎬 Replay</button></div>
 
 <!-- CARTE -->
 <div class="mapcard">
@@ -388,12 +393,38 @@ function checkCelebrations(c,before){
   if(c.obj>0&&totB<c.obj&&tot>=c.obj)celebrate("🎯","Objectif du jour atteint !");
   if(after>20){var pa=Math.floor((after-20)/3),pb=before>20?Math.floor((before-20)/3):0;if(pa>pb)celebrate("🏎️","Turbo ! palier "+pa);}
 }
+function compileCelebrations(){
+  var out=[];
+  for(var i=0;i<D.length;i++){
+    var c=D[i]; if(c.et>CUR)continue;
+    var dnum=null; for(var k=0;k<CALDAYS.length;k++){if(CALDAYS[k].t==="work"&&CALDAYS[k].et===i){dnum=CALDAYS[k].d;break;}}
+    if(c.obj>0&&(c.cartes+c.rep)>=c.obj)out.push({day:dnum,name:c.name,emoji:"🎯",label:"Objectif du jour atteint"});
+    if(c.cartes>=14)out.push({day:dnum,name:c.name,emoji:"📮",label:"Lettre suivie validée"});
+    if(c.cartes>20){var pal=Math.floor((c.cartes-20)/3);for(var t=1;t<=pal;t++)out.push({day:dnum,name:c.name,emoji:"🏎️",label:"Turbo — palier "+t});}
+  }
+  return out;
+}
 function openPalmares(){
-  var rows=[];for(var i=0;i<D.length;i++){var c=D[i];rows.push({et:c.et,name:c.name,cartes:c.cartes,obj:c.obj});}
-  rows.sort(function(a,b){return b.cartes-a.cartes;});
-  var msg="PALMARES DES ETAPES\n\n";
-  rows.slice(0,12).forEach(function(r,n){msg+=(n+1)+". Etape "+r.et+" "+r.name+" - "+r.cartes+" cartes (obj "+r.obj+")\n";});
-  alert(msg);
+  var evs=compileCelebrations(),el=document.getElementById("pList");
+  if(!evs.length){el.innerHTML='<div class="pempty">Aucune célébration pour le moment — en route ! 🚐</div>';}
+  else{
+    var byDay={};evs.forEach(function(e){(byDay[e.day]=byDay[e.day]||[]).push(e);});
+    var days=Object.keys(byDay).sort(function(a,b){return a-b;}),html="";
+    days.forEach(function(d){
+      html+='<div class="pday"><div class="pdh">📅 '+d+' juillet</div>';
+      byDay[d].forEach(function(e){html+='<div class="pev"><span class="pe">'+e.emoji+'</span><span>'+e.label+' <b>· '+e.name+'</b></span></div>';});
+      html+="</div>";
+    });
+    el.innerHTML=html;
+  }
+  document.getElementById("pSub").textContent=evs.length+" célébration"+(evs.length>1?"s":"")+" ce mois-ci";
+  document.getElementById("bdP").classList.add("open");
+}
+function closeP(){document.getElementById("bdP").classList.remove("open");}
+function replay(){
+  var evs=compileCelebrations();
+  if(!evs.length){celebrate("🚐","En route ! Pas encore de célébration");return;}
+  var idx=0;(function next(){if(idx>=evs.length)return;var e=evs[idx++];celebrate(e.emoji,e.label);setTimeout(next,1400);})();
 }
 let openK=null;
 const reached=c=>(c.cartes+c.rep)>=c.obj&&c.obj>0;
@@ -553,10 +584,15 @@ function syncMod(){const c=D[openK];
   r.className='mres '+(ok?'ok':'no');
   r.textContent=ok?('✅ Objectif atteint · '+tot+' / '+c.obj):(c.obj>0?('Encore '+Math.max(0,c.obj-tot)+' · '+tot+' / '+c.obj):"Pas encore d'objectif");}
 function mstep(f,n){const c=D[openK];var b=c.cartes;c[f]=Math.max(0,c[f]+n);syncMod();renderLettres();renderCumul();if(openK===CUR-1){renderDash();}if(f==='cartes'&&n>0&&openK===CUR-1)checkCelebrations(c,b);commit(openK);}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeG();closeO();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeG();closeO();closeP();}});
 resetLocal();renderAll();setSync("⏳ Chargement…");
 loadShared().then(function(){renderAll();setSync("✅ Pret · "+nowT());});
 </script>
+<div class="bd" id="bdP" onclick="if(event.target===this)closeP()">
+ <div class="mod"><button class="mclose" onclick="closeP()">✕</button>
+   <div class="body"><div class="nm">🎉 Palmarès des célébrations</div><div class="et" id="pSub">au fil du mois</div>
+   <div id="pList" style="margin-top:12px"></div></div>
+ </div></div>
 <canvas id="cfx" style="position:fixed;inset:0;pointer-events:none;z-index:90"></canvas>
 <div id="celeb" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:91"></div>
 </body></html>
