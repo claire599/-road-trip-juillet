@@ -457,7 +457,7 @@ function renderBanner(){const c=D[CUR-1];
   document.getElementById('bPv').textContent=c.name.toUpperCase();
   document.getElementById('bPl').textContent='étape '+c.et+' / '+D.length+' · '+c.sum.split('.')[0];}
 function renderDash(){const c=D[CUR-1];
-  document.getElementById('dCartes').textContent=c.cartes;
+  document.getElementById('dCartes').textContent=c.cartes+c.rep;
   document.getElementById('dRep').textContent=c.rep;
   document.getElementById('dObj').textContent=c.obj;
   const tot=c.cartes+c.rep,ok=reached(c),l=document.getElementById('dObjLine');
